@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MANUAL DE PISTA | Telemetría Táctica</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111;
+            --text-color: #e0e0e0;
+            --accent-color: #D90429; /* Rojo Sangre Marca */
+            --accent-dim: rgba(217, 4, 41, 0.2);
+            --border-color: #333;
+            --highlight: #fff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding-bottom: 100px;
+        }
+
+        /* HEADER */
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 2px;
+            font-style: italic;
+            text-shadow: 0 0 15px var(--accent-color);
+        }
+
+        .status-badge {
+            background: var(--accent-dim);
+            color: var(--accent-color);
+            padding: 4px 12px;
+            border-radius: 2px;
+            font-size: 0.7rem;
+            border: 1px solid var(--accent-color);
+            display: inline-block;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        /* DASHBOARD VISUAL */
+        .dashboard-visual {
+            background: #000;
+            border: 2px solid #222;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+        }
+        
+        .tachometer {
+            width: 220px;
+            height: 110px;
+            background: radial-gradient(circle at 50% 100%, #1a1a1a 0%, #000 70%);
+            border-radius: 110px 110px 0 0;
+            border: 4px solid #333;
+            border-bottom: 0;
+            position: relative;
+            margin-bottom: 10px;
+            box-shadow: 0 0 20px rgba(217, 4, 41, 0.1);
+        }
+        
+        .tachometer::after {
+            content: '';
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 0;
+            border-radius: 100px 100px 0 0;
+            background: conic-gradient(from 270deg, transparent 0%, transparent 60%, #D90429 60%, #D90429 100%);
+            opacity: 0.3;
+            z-index: 1;
+        }
+
+        .tacho-marks {
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 110px 110px 0 0;
+            background: repeating-conic-gradient(from 270deg, rgba(255,255,255,0.2) 0deg, rgba(255,255,255,0.2) 1deg, transparent 1deg, transparent 18deg);
+            z-index: 2;
+        }
+
+        .needle {
+            width: 90px;
+            height: 4px;
+            background: #D90429;
+            position: absolute;
+            bottom: 0; left: 110px;
+            transform-origin: left center;
+            transform: rotate(180deg);
+            z-index: 5;
+            border-radius: 2px;
+            box-shadow: 0 0 15px #D90429;
+            animation: revUp 4s infinite alternate cubic-bezier(0.1, 0.7, 1.0, 0.1);
+        }
+        .needle-hub {
+            width: 20px; height: 10px; background: #333; border-radius: 10px 10px 0 0;
+            position: absolute; bottom: 0; left: 100px; z-index: 6;
+        }
+
+        @keyframes revUp {
+            0% { transform: rotate(185deg); }
+            15% { transform: rotate(210deg); }
+            40% { transform: rotate(200deg); }
+            60% { transform: rotate(320deg); }
+            70% { transform: rotate(290deg); }
+            100% { transform: rotate(350deg); }
+        }
+
+        .digital-readout {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+            font-family: monospace;
+            margin-top: -10px;
+            z-index: 10;
+        }
+        .stat-box { text-align: center; background: #111; padding: 5px 10px; border: 1px solid #333; border-radius: 4px; }
+        .stat-label { font-size: 0.6rem; color: #666; display: block; margin-bottom: 2px; }
+        .stat-val { font-size: 1rem; font-weight: bold; color: #fff; }
+        .stat-val.red { color: #D90429; text-shadow: 0 0 5px #D90429; }
+
+        /* AUDIO */
+        .audio-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .audio-label { 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            margin-bottom: 8px; 
+            display: block; 
+            color: var(--accent-color); 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        audio { width: 100%; height: 30px; filter: invert(0.9) hue-rotate(0deg); }
+
+        /* TABS */
+        .phase-selector {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: #000;
+            padding: 5px;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+        .phase-btn {
+            background: transparent;
+            border: none;
+            color: #666;
+            padding: 10px 5px;
+            flex: 1;
+            font-weight: bold;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .phase-btn.active {
+            color: #fff;
+            background: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-color);
+            border-radius: 4px;
+        }
+
+        /* LISTA POSICIONES */
+        .position-list { display: none; animation: fadeIn 0.5s ease; }
+        .position-list.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .pos-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .pos-card:hover { border-color: #666; }
+
+        .pos-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, #1a1a1a, #111);
+            cursor: pointer;
+        }
+        .pos-title { font-weight: bold; color: #fff; font-size: 1rem; text-transform: uppercase; }
+        .pos-time { font-size: 0.8rem; color: var(--accent-color); font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; }
+
+        .pos-body {
+            padding: 15px;
+            border-top: 1px solid #222;
+            display: none;
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .pos-body.open { display: block; }
+
+        /* FRICCIÓN BARRA */
+        .friction-meter {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+        .bar-container {
+            flex: 1;
+            height: 6px;
+            background: #333;
+            margin-left: 10px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .bar-fill { height: 100%; }
+        .low { width: 20%; background: #00E676; }
+        .med { width: 50%; background: #FFD700; }
+        .high { width: 80%; background: var(--accent-color); }
+
+        .pro-tip {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #fff;
+            padding: 10px;
+            margin-top: 15px;
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+
+        /* CRONÓMETRO */
+        .race-timer {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: #000;
+            border-top: 2px solid var(--accent-color);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+        }
+        .rt-text { font-size: 0.8rem; color: #888; text-transform: uppercase; }
+        .rt-time { font-size: 1.5rem; font-weight: 900; color: #fff; font-family: monospace; }
+        .rt-btn {
+            background: var(--accent-color);
+            border: none;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .download-btn {
+            display: block;
+            text-align: center;
+            margin: 30px 0 100px 0;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.8rem;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .download-btn:hover { border-color: var(--accent-color); color: #fff; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <header>
+        <h1>MANUAL DE PISTA</h1>
+        <div class="status-badge">SISTEMA DE TELEMETRÍA v2.1</div>
+    </header>
+
+    <!-- DASHBOARD VISUAL -->
+    <div class="dashboard-visual">
+        <div class="tachometer">
+            <div class="tacho-marks"></div>
+            <div class="needle"></div>
+            <div class="needle-hub"></div>
+        </div>
+        <div class="digital-readout">
+            <div class="stat-box">
+                <span class="stat-label">RPM</span>
+                <span class="stat-val red">CRITICAL</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">FRICCIÓN</span>
+                <span class="stat-val">HIGH</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">TEMP</span>
+                <span class="stat-val">98°C</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO -->
+    <div class="audio-card">
+        <span class="audio-label">🎧 BRIEFING TÉCNICO (INGENIEROS DE PISTA)</span>
+        <audio controls>
+            <source src="audio_pista.mp3" type="audio/mpeg">
+            Tu navegador no soporta el elemento de audio.
+        </audio>
+        <p style="font-size:0.7rem; color:#666; text-align:center; margin-top:10px;">
+            ¿No suena? <a href="audio_pista.mp3" target="_blank" style="color:#888;">Abrir canal de audio directo</a>
+        </p>
+    </div>
+
+    <!-- SELECTOR DE FASE -->
+    <div class="phase-selector">
+        <button class="phase-btn active" onclick="showPhase('novato')">NOVATO<br>(Sem 1-2)</button>
+        <button class="phase-btn" onclick="showPhase('inter')">INTERMEDIO<br>(Sem 3-4)</button>
+        <button class="phase-btn" onclick="showPhase('avanzado')">AVANZADO<br>(Sem 5-6)</button>
+        <button class="phase-btn" onclick="showPhase('experto')">EXPERTO<br>(Sem 7+)</button>
+    </div>
+
+    <!-- LISTA DE POSICIONES -->
+    <div id="list-novato" class="position-list active">
+        <!-- TEST DE TELEMETRÍA (NUEVO) -->
+        <div class="pos-card" onclick="toggleCard(this)" style="border-color: #00E676;">
+            <div class="pos-header">
+                <span class="pos-title" style="color:#00E676;">0. Test de Telemetría (Solo)</span>
+                <span class="pos-time" style="color:#00E676; background:rgba(0,230,118,0.1);">10m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill low"></div></div> CONTROLADA
+                </div>
+                <p><strong>Objetivo:</strong> Aprender a distinguir entre Nivel 6 (Seguro) y Nivel 7 (Alerta) sin pareja.</p>
+                <p><strong>Instrucción:</strong> Estimúlate hasta el Nivel 6. Manténlo ahí. Si subes a 7, para y respira. Repite 3 veces antes de terminar.</p>
+                <div class="pro-tip">💡 TIP: Di el número en voz alta ("Estoy en 5... subiendo a 6").</div>
+            </div>
+        </div>
+
+        <!-- Posición 1 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">1. Cucharita Modificada</span>
+                <span class="pos-time">15-25m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill low"></div></div> BAJA
+                </div>
+                <p><strong>Mecánica:</strong> Ambos acostados de lado, ella dándote la espalda. Tú te colocas detrás pero NO te pegas completamente. Mantén un ángulo de 30-45° con tu cuerpo.</p>
+                <p><strong>Por qué funciona:</strong> Al entrar en ángulo (no recto), el frenillo no roza directamente con la pared vaginal. Además, puedes relajar las piernas (clave para no eyacular).</p>
+                <div class="pro-tip">💡 TIP: Usa tus manos para acariciarla. Distrae tu cerebro con el tacto.</div>
+            </div>
+        </div>
+        <!-- Posición 2 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">2. Sentado Invertido</span>
+                <span class="pos-time">20-30m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill low"></div></div> MUY BAJA
+                </div>
+                <p><strong>Mecánica:</strong> Tú te sientas en el borde de la cama, pies en el suelo. Ella se sienta encima de ti, dándote la espalda (mirando hacia tus pies).</p>
+                <p><strong>Por qué funciona:</strong> Tú estás pasivo (chasis). Ella controla el ritmo (volante). Al no mover tus caderas, tu ritmo cardíaco baja y duras mucho más.</p>
+                <div class="pro-tip">💡 TIP: Si sientes que llegas al límite, abrázala fuerte por la cintura para frenar su movimiento.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="list-inter" class="position-list">
+        <!-- Posición 3 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">3. Misionero Modificado</span>
+                <span class="pos-time">12-18m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill med"></div></div> MEDIA
+                </div>
+                <p><strong>Mecánica:</strong> Misionero normal, pero pon una almohada debajo de las nalgas de ella. Esto eleva su pelvis.</p>
+                <p><strong>Por qué funciona:</strong> Cambia el ángulo de entrada. En lugar de bombear dentro-fuera, puedes hacer círculos con tu cadera, frotando tu pubis contra su clítoris.</p>
+                <div class="pro-tip">💡 TIP: Concéntrate en el roce de piel con piel, no en la profundidad.</div>
+            </div>
+        </div>
+        <!-- Posición 4 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">4. Técnica CAT</span>
+                <span class="pos-time">15-25m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill low"></div></div> BAJA
+                </div>
+                <p><strong>Mecánica:</strong> (Coital Alignment Technique). Similar al misionero, pero tu cuerpo está más arriba (tu pecho sobre su cara). Tu pene no entra y sale, se queda dentro.</p>
+                <p><strong>Movimiento:</strong> "Mecedora". Mueve tu pelvis arriba y abajo suavemente, sin sacar el pene.</p>
+                <div class="pro-tip">💡 TIP: Sincroniza la respiración con ella. Es una posición de conexión, no de bombeo.</div>
+            </div>
+        </div>
+        <!-- Posición 5 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">5. Cow-Girl Lenta</span>
+                <span class="pos-time">18-28m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill med"></div></div> MEDIA
+                </div>
+                <p><strong>Mecánica:</strong> Ella arriba, mirándote de frente. Ella controla la profundidad y la velocidad.</p>
+                <div class="pro-tip">💡 TIP: Coloca tus manos en sus caderas. Si va muy rápido, úsalas para frenar el ritmo suavemente.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="list-avanzado" class="position-list">
+        <!-- Posición 6 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">6. Reverse Cow-Girl</span>
+                <span class="pos-time">25-35m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill low"></div></div> BAJA
+                </div>
+                <p><strong>Mecánica:</strong> Ella arriba, pero dándote la espalda. Puede inclinarse hacia adelante apoyándose en tus piernas.</p>
+                <p><strong>Por qué funciona:</strong> La curvatura natural del pene hace que en esta posición el frenillo casi no toque nada. Es la posición de "Resistencia Infinita".</p>
+                <div class="pro-tip">💡 TIP: Úsala para descansar cuando sientas que estás llegando al límite en otra posición.</div>
+            </div>
+        </div>
+        <!-- Posición 7 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">7. Ángulo Lateral</span>
+                <span class="pos-time">16-26m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill low"></div></div> BAJA
+                </div>
+                <p><strong>Mecánica:</strong> Ella arriba, pero girada 45 grados hacia un lado (ni de frente ni de espaldas).</p>
+                <div class="pro-tip">💡 TIP: Si sientes mucha sensibilidad, pídele que rote un poco más. El cambio de ángulo reduce la fricción al instante.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="list-experto" class="position-list">
+        <!-- Posición 9 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">9. Borde de Cama</span>
+                <span class="pos-time">20-30m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill med"></div></div> MEDIA
+                </div>
+                <p><strong>Mecánica:</strong> Ella acostada al borde de la cama, con las piernas colgando o apoyadas en tus hombros. Tú de pie frente a ella.</p>
+                <p><strong>Por qué funciona:</strong> Tú estás de pie y tienes control visual total. Puedes ver exactamente cuánto entra y sale, lo que ayuda a controlar la profundidad.</p>
+                <div class="pro-tip">💡 TIP: Mantén la penetración superficial (solo la punta) para burlar la sensibilidad.</div>
+            </div>
+        </div>
+        <!-- Posición 10 -->
+        <div class="pos-card" onclick="toggleCard(this)">
+            <div class="pos-header">
+                <span class="pos-title">10. Standing Slow</span>
+                <span class="pos-time">18-28m</span>
+            </div>
+            <div class="pos-body">
+                <div class="friction-meter">
+                    Fricción: <div class="bar-container"><div class="bar-fill high"></div></div> ALTA
+                </div>
+                <p><strong>Mecánica:</strong> Ambos de pie (contra una pared o en la ducha). Requiere mucha fuerza en las piernas.</p>
+                <div class="pro-tip">💡 TIP: Es la más difícil porque tus músculos están tensos para sostenerte. Úsala solo cuando seas un experto controlando el "Freno de Mano" (Kegels Inversos).</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DESCARGA -->
+    <a href="manual_pista.pdf" download class="download-btn">
+        📂 DESCARGAR MANUAL PDF COMPLETO
+    </a>
+
+</div>
+
+<!-- CRONÓMETRO FLOTANTE -->
+<div class="race-timer">
+    <div>
+        <span class="rt-text">TIEMPO EN PISTA</span>
+        <div class="rt-time" id="timer">00:00</div>
+    </div>
+    <button class="rt-btn" id="timer-btn" onclick="toggleTimer()">INICIAR</button>
+</div>
+
+<script>
+    // --- LÓGICA DE FASES ---
+    function showPhase(phaseId) {
+        document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.position-list').forEach(l => l.classList.remove('active'));
+        document.getElementById('list-' + phaseId).classList.add('active');
+    }
+
+    // --- ACORDEÓN DE TARJETAS ---
+    function toggleCard(card) {
+        const body = card.querySelector('.pos-body');
+        if (body.classList.contains('open')) {
+            body.classList.remove('open');
+        } else {
+            document.querySelectorAll('.pos-body').forEach(b => b.classList.remove('open'));
+            body.classList.add('open');
+        }
+    }
+
+    // --- CRONÓMETRO DE CARRERA ---
+    let timerInterval;
+    let seconds = 0;
+    let isRunning = false;
+
+    function toggleTimer() {
+        const btn = document.getElementById('timer-btn');
+        
+        if (isRunning) {
+            clearInterval(timerInterval);
+            btn.innerText = "CONTINUAR";
+            btn.style.backgroundColor = "#D90429";
+            isRunning = false;
+        } else {
+            timerInterval = setInterval(updateTimer, 1000);
+            btn.innerText = "PAUSA";
+            btn.style.backgroundColor = "#333";
+            isRunning = true;
+        }
+    }
+
+    function updateTimer() {
+        seconds++;
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${mins}:${secs}`;
+    }
+
+</script>
+
+</body>
+</html>
